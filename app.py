@@ -145,7 +145,7 @@ Amount in Words: {payout_words}
 """
 
                 pdf.multi_cell(0, 8, contract_text.strip())
-                pdf_bytes = bytes(pdf.output(dest='S'))
+                pdf_bytes = pdf.output(dest='S').encode('latin-1')
 
                 filename = record.get("Company", f"contract_{i+1}").replace(" ", "_") + ".pdf"
                 zip_file.writestr(filename, pdf_bytes)
