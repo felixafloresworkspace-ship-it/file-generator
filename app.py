@@ -192,23 +192,23 @@ Amount in Words: {payout_words}
                 context = {
                     "Agreement_Date": datetime.now().strftime('%Y-%m-%d'),
                     "Company": record.get("Company", ""),
-                    "CompanyAddress": record.get("Company Address", ""),
-                    "SubcontractorName": record.get("Subcontractor Name", ""),
-                    "SubcontractorAddress": record.get("Subcontractor Address", ""),
-                    "SubcontractorCity": record.get("Subcontractor City", ""),
-                    "POCName": record.get("POC Name", ""),
-                    "POCPhone": record.get("POC Phone", ""),
-                    "POCEmail": record.get("POC Email", ""),
-                    "Project_Name": record.get("Project Name", ""),
-                    "Project_Number": record.get("Project Number", ""),
-                    "Project_Address": record.get("Project Address", ""),
+                    "CompanyAddress": record.get("CompanyAddress", ""),
+                    "SubcontractorName": record.get("SubcontractorName", ""),
+                    "SubcontractorAddress": record.get("SubcontractorAddress", ""),
+                    "SubcontractorCity": record.get("SubcontractorCity", ""),
+                    "POCName": record.get("POCName", ""),
+                    "POCPhone": record.get("POCPhone", ""),
+                    "POCEmail": record.get("POCEmail", ""),
+                    "Project_Name": record.get("ProjectName", ""),
+                    "Project_Number": record.get("ProjectNumber", ""),
+                    "Project_Address": record.get("ProjectAddress", ""),
                     "Division": record.get("Division", ""),
                     "Scope": record.get("Scope", ""),
                     "Addendums": record.get("Addendums", ""),
                     "alternate": record.get("alternate", ""),
                     "Payout": f"{payout_value:,.2f}",
                     "PayoutWords": payout_words,
-                    "Completion_Date": str(record.get("Completion Date", ""))
+                    "CompletionDate": str(record.get("CompletionDate", ""))
                 }
 
                 for template_name in selected_templates:
