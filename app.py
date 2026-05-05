@@ -195,6 +195,7 @@ Amount in Words: {payout_words}
                     "Company_Address": record.get("Company Address", ""),
                     "Subcontractor_Name": record.get("Subcontractor Name", ""),
                     "Subcontractor_Address": record.get("Subcontractor Address", ""),
+                    "Subcontractor_City": record.get("Subcontractor City", ""),
                     "POC_Name": record.get("POC Name", ""),
                     "POC_Phone": record.get("POC Phone", ""),
                     "POC_Email": record.get("POC Email", ""),
@@ -202,6 +203,8 @@ Amount in Words: {payout_words}
                     "Project_Number": record.get("Project Number", ""),
                     "Project_Address": record.get("Project Address", ""),
                     "Scope": record.get("Scope", ""),
+                    "Addendums": record.get("Addendums", ""),
+                    "alternate": record.get("alternate", ""),
                     "Payout": f"{payout_value:,.2f}",
                     "PayoutWords": payout_words,
                     "Completion_Date": str(record.get("Completion Date", ""))
