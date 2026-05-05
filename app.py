@@ -33,6 +33,7 @@ if uploaded_templates:
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
     st.sidebar.success("Templates saved permanently!")
+    st.rerun()
 
 # LOAD SAVED TEMPLATES
 saved_templates = [
@@ -57,6 +58,7 @@ if option == "Manual Form":
         data["Company Address"] = st.text_input("Company Address")
         data["Subcontractor Name"] = st.text_input("Subcontractor Name")
         data["Subcontractor Address"] = st.text_input("Subcontractor Address")
+        data["Subcontractor City"] = st.text_input("Subcontractor City")
         data["POC Name"] = st.text_input("Point of Contact Name")
         data["POC Phone"] = st.text_input("POC Phone")
         data["POC Email"] = st.text_input("POC Email")
@@ -65,10 +67,13 @@ if option == "Manual Form":
         data["Project Name"] = st.text_input("Project Name")
         data["Project Number"] = st.text_input("Project Number")
         data["Project Address"] = st.text_input("Project Address")
+        data["Division"] = st.text_input("Division")
         data["Payout"] = st.number_input("Payout ($)", min_value=0.0)
         data["Completion Date"] = st.date_input("Project Completion Date")
 
     data["Scope"] = st.text_area("Scope of Work", height=150)
+    data["Addendums"] = st.text_area("Addendums")
+    data["alternate"] = st.text_area("Alternates")
 
 # ---------------- EXCEL INPUT ----------------
 else:
@@ -76,6 +81,10 @@ else:
 
     if uploaded_file:
         df = pd.read_excel(uploaded_file)
+
+        # 🔥 CLEAN COLUMN NAMES
+        df.columns = df.columns.str.strip()
+
         st.dataframe(df, use_container_width=True)
 
         if not df.empty:
@@ -130,7 +139,6 @@ if st.button("Generate Files", type="primary"):
 
                     dollars_words = num2words(dollars).replace(',', '').title()
                     payout_words = f"{dollars_words} Dollars And {cents:02d}/100"
-
                 except:
                     payout_words = "Invalid Amount"
 
@@ -138,13 +146,15 @@ if st.button("Generate Files", type="primary"):
 SUBCONTRACTOR AGREEMENT
 
 Company: {record.get("Company", "")}
-Project: {record.get("Project Name", "")}
+Project: {record.get("Project Name", record.get("ProjectName", ""))}
 
 Payout: ${payout_value:,.2f}
 Amount in Words: {payout_words}
 """
 
                 pdf.multi_cell(0, 8, contract_text.strip())
+
+                # 🔥 FIXED PDF CRASH
                 pdf_bytes = pdf.output(dest='S').encode('latin-1')
 
                 filename = record.get("Company", f"contract_{i+1}").replace(" ", "_") + ".pdf"
@@ -185,30 +195,43 @@ Amount in Words: {payout_words}
 
                     dollars_words = num2words(dollars).replace(',', '').title()
                     payout_words = f"{dollars_words} Dollars And {cents:02d}/100"
-
                 except:
                     payout_words = "Invalid Amount"
 
+                # 🔥 FLEXIBLE FIELD MAPPING
+                def get_val(*keys):
+                    for k in keys:
+                        if k in record:
+                            return record.get(k)
+                    return ""
+
                 context = {
                     "Agreement_Date": datetime.now().strftime('%Y-%m-%d'),
-                    "Company": record.get("Company", ""),
-                    "CompanyAddress": record.get("CompanyAddress", ""),
-                    "SubcontractorName": record.get("SubcontractorName", ""),
-                    "SubcontractorAddress": record.get("SubcontractorAddress", ""),
-                    "SubcontractorCity": record.get("SubcontractorCity", ""),
-                    "POCName": record.get("POCName", ""),
-                    "POCPhone": record.get("POCPhone", ""),
-                    "POCEmail": record.get("POCEmail", ""),
-                    "Project_Name": record.get("ProjectName", ""),
-                    "Project_Number": record.get("ProjectNumber", ""),
-                    "Project_Address": record.get("ProjectAddress", ""),
-                    "Division": record.get("Division", ""),
-                    "Scope": record.get("Scope", ""),
-                    "Addendums": record.get("Addendums", ""),
-                    "alternate": record.get("alternate", ""),
+
+                    "Company": get_val("Company"),
+                    "CompanyAddress": get_val("Company Address", "CompanyAddress"),
+
+                    "SubcontractorName": get_val("Subcontractor Name", "SubcontractorName"),
+                    "SubcontractorAddress": get_val("Subcontractor Address", "SubcontractorAddress"),
+                    "SubcontractorCity": get_val("Subcontractor City", "SubcontractorCity"),
+
+                    "POCName": get_val("POC Name", "POCName"),
+                    "POCPhone": get_val("POC Phone", "POCPhone"),
+                    "POCEmail": get_val("POC Email", "POCEmail"),
+
+                    "ProjectName": get_val("Project Name", "ProjectName"),
+                    "ProjectNumber": get_val("Project Number", "ProjectNumber"),
+                    "ProjectAddress": get_val("Project Address", "ProjectAddress"),
+
+                    "Division": get_val("Division"),
+                    "Scope": get_val("Scope"),
+                    "Addendums": get_val("Addendums"),
+                    "alternate": get_val("alternate"),
+
                     "Payout": f"{payout_value:,.2f}",
                     "PayoutWords": payout_words,
-                    "CompletionDate": str(record.get("CompletionDate", ""))
+
+                    "CompletionDate": str(get_val("Completion Date", "CompletionDate"))
                 }
 
                 for template_name in selected_templates:
@@ -220,7 +243,9 @@ Amount in Words: {payout_words}
                     file_stream = io.BytesIO()
                     doc.save(file_stream)
 
-                    company = record.get("Company", f"company_{i+1}").replace(" ", "_")
+                    company = get_val("Company") or f"company_{i+1}"
+                    company = company.replace(" ", "_")
+
                     clean_template = template_name.replace(".docx", "").replace(" ", "_")
 
                     filename = f"{company}_{clean_template}.docx"
