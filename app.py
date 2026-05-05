@@ -202,6 +202,7 @@ Amount in Words: {payout_words}
                     "Project_Name": record.get("Project Name", ""),
                     "Project_Number": record.get("Project Number", ""),
                     "Project_Address": record.get("Project Address", ""),
+                    "Division": record.get("Division", ""),
                     "Scope": record.get("Scope", ""),
                     "Addendums": record.get("Addendums", ""),
                     "alternate": record.get("alternate", ""),
