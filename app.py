@@ -11,7 +11,6 @@ import os
 # ---------------- TEMPLATE STORAGE ----------------
 TEMPLATE_DIR = "templates"
 
-# 🔥 FIX: prevent crash if templates exists as file
 if os.path.exists(TEMPLATE_DIR) and not os.path.isdir(TEMPLATE_DIR):
     os.remove(TEMPLATE_DIR)
 
@@ -35,22 +34,18 @@ uploaded_templates = st.sidebar.file_uploader(
     accept_multiple_files=True
 )
 
-# SAVE TEMPLATES
 if uploaded_templates:
     for uploaded_file in uploaded_templates:
         file_path = os.path.join(TEMPLATE_DIR, uploaded_file.name)
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
-
     st.sidebar.success("Templates saved!")
     st.rerun()
 
-# LOAD SAVED TEMPLATES
 saved_templates = []
 if os.path.exists(TEMPLATE_DIR):
     saved_templates = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith(".docx")]
 
-# 🔥 FIX: persist selection
 selected_templates = st.sidebar.multiselect(
     "Select Templates to Use",
     saved_templates,
@@ -58,6 +53,36 @@ selected_templates = st.sidebar.multiselect(
 )
 
 st.session_state.selected_templates = selected_templates
+
+# ---------------- HELPERS ----------------
+def clean_number_words(n):
+    return num2words(n).replace(",", "").replace(" and ", " ").title()
+
+def format_division(val):
+    if val is None or val == "":
+        return ""
+    try:
+        if isinstance(val, str) and "," in val:
+            parts = [str(int(float(x.strip()))) for x in val.split(",")]
+            return ", ".join(parts)
+        return str(int(float(val)))
+    except:
+        return str(val)
+
+def build_payout_words(value):
+    try:
+        payout_value = float(value)
+        dollars = int(payout_value)
+        cents = int(round((payout_value - dollars) * 100))
+
+        dollars_words = clean_number_words(dollars)
+        cents_words = clean_number_words(cents)
+
+        cents_label = "Cent" if cents == 1 else "Cents"
+
+        return f"{dollars_words} Dollars And {cents_words} {cents_label} ({cents:02d}/100)"
+    except:
+        return "Invalid Amount"
 
 # ---------------- DATA ----------------
 data = {}
@@ -95,8 +120,6 @@ else:
 
     if uploaded_file:
         df = pd.read_excel(uploaded_file)
-
-        # CLEAN HEADERS
         df.columns = df.columns.str.strip()
 
         st.dataframe(df, use_container_width=True)
@@ -144,22 +167,18 @@ if st.button("Generate Files", type="primary"):
                 pdf.add_page()
                 pdf.set_font("Arial", size=12)
 
-                payout_value = float(record.get("Payout", 0))
-                dollars = int(payout_value)
-                cents = int(round((payout_value - dollars) * 100))
-
-                payout_words = f"{num2words(dollars).title()} Dollars And {cents:02d}/100"
+                payout_value = record.get("Payout", 0)
+                payout_words = build_payout_words(payout_value)
 
                 contract_text = f"""
 Company: {record.get("Company","")}
 Project: {record.get("Project Name", record.get("ProjectName",""))}
 
-Payout: ${payout_value:,.2f}
+Payout: ${float(payout_value):,.2f}
 Amount in Words: {payout_words}
 """
 
                 pdf.multi_cell(0, 8, contract_text.strip())
-
                 pdf_bytes = pdf.output(dest='S').encode('latin-1')
 
                 filename = record.get("Company", f"contract_{i+1}").replace(" ", "_") + ".pdf"
@@ -196,11 +215,8 @@ Amount in Words: {payout_words}
 
             for i, record in enumerate(records):
 
-                payout_value = float(record.get("Payout", 0))
-                dollars = int(payout_value)
-                cents = int(round((payout_value - dollars) * 100))
-
-                payout_words = f"{num2words(dollars).title()} Dollars And {cents:02d}/100"
+                payout_value = record.get("Payout", 0)
+                payout_words = build_payout_words(payout_value)
 
                 context = {
                     "Agreement_Date": datetime.now().strftime('%Y-%m-%d'),
@@ -220,12 +236,12 @@ Amount in Words: {payout_words}
                     "ProjectNumber": get_val(record, "Project Number", "ProjectNumber"),
                     "ProjectAddress": get_val(record, "Project Address", "ProjectAddress"),
 
-                    "Division": get_val(record, "Division"),
+                    "Division": format_division(get_val(record, "Division")),
                     "Scope": get_val(record, "Scope"),
                     "Addendums": get_val(record, "Addendums"),
                     "alternate": get_val(record, "alternate"),
 
-                    "Payout": f"{payout_value:,.2f}",
+                    "Payout": f"{float(payout_value):,.2f}",
                     "PayoutWords": payout_words,
 
                     "CompletionDate": str(get_val(record, "Completion Date", "CompletionDate"))
